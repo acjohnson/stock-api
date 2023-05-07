@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "stock-api.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ template "stock-api.name" . }}
+    helm.sh/chart: {{ template "stock-api.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.stock_api.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "stock-api.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "stock-api.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.stock_api.image.repository }}:{{ .Values.stock_api.image.tag }}"
+          imagePullPolicy: {{ .Values.stock_api.image.pullPolicy }}
+          env:
+            - name: REDIS_HOST
+              value: "{{ .Values.stock_api.redisHost }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.stock_api.port }}
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "stock-api.name" . }}
+spec:
+  selector:
+    app: {{ template "stock-api.name" . }}
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: 8080

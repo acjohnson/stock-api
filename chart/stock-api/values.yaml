@@ -1,0 +1,19 @@
+service:
+  type: ClusterIP
+  port: 8080
+redis:
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+  sentinel:
+    enabled: false
+stock_api:
+  image:
+    repository: registry.thejohnsons.site/debianbased/stock-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  redisHost: "redis-master"
+  replicaCount: 1
+  port: 8080
