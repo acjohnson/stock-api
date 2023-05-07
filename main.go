@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -98,7 +99,7 @@ func main() {
 				return
 			}
 
-			err = client.Set(symbol, value, 0).Err()
+			err = client.Set(symbol, value.Price, 0).Err()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
