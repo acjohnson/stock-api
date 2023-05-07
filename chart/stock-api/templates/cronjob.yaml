@@ -1,0 +1,43 @@
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ template "stock-api.fullname" . }}-fetch-stock-prices
+  labels:
+    helm.sh/chart: {{ template "stock-api.chart" . }}
+spec:
+  schedule: "0 */12 * * *" # Run every 12 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: stock-prices
+            image: python:3.9-bullseye
+            env:
+              - name: SYMBOLS
+                valueFrom:
+                  configMapKeyRef:
+                    name: {{ template "stock-api.fullname" . }}-fetch-stock-prices
+                    key: SYMBOLS
+            command: 
+             - sh
+             - "-c"
+             - |
+               /bin/bash <<'EOF'
+               set -x
+               set -e
+               apt update
+               apt install -y httpie
+               for symbol in $SYMBOLS; do
+                 http --check-status http://stock-api.stock-api.svc.cluster.local:8080/stock/$symbol
+               done
+               EOF
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "stock-api.fullname" . }}-fetch-stock-prices
+data:
+  SYMBOLS: '{{ join " " .Values.stock_api.symbols }}'

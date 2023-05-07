@@ -17,3 +17,7 @@ stock_api:
   redisHost: "redis-master"
   replicaCount: 1
   port: 8080
+  symbols:
+    - msft
+    - meta
+    - tsla

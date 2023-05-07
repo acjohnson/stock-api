@@ -1,4 +1,2 @@
-stock-api
-!stock-api/.gitkeep
 go.sum
 Chart.lock
