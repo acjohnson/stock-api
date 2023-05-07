@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type stockValue struct {
@@ -64,6 +66,7 @@ func fetchStockValue(symbol string, apiKey string) (*StockQuote, error) {
 	result := data["quoteResponse"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})
 	price, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", result["regularMarketPrice"].(float64)), 64)
 	change, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", result["regularMarketChangePercent"].(float64)), 64)
+
 	return &StockQuote{
 		Symbol:        symbol,
 		Price:         price,
@@ -73,6 +76,16 @@ func fetchStockValue(symbol string, apiKey string) (*StockQuote, error) {
 
 func main() {
 	apiKey := ""
+	stockPrices := prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "stock_price",
+			Help: "Latest stock price for the given symbol",
+		},
+		[]string{"symbol"},
+	)
+	prometheus.MustRegister(stockPrices)
+	http.Handle("/metrics", promhttp.Handler())
+
 	redisHost := os.Getenv("REDIS_HOST")
 	if redisHost == "" {
 		log.Fatal("REDIS_HOST environment variable not set")
@@ -125,6 +138,7 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(stockValue)
+		stockPrices.WithLabelValues(symbol).Set(val)
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
