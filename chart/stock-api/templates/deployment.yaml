@@ -3,9 +3,10 @@ kind: Deployment
 metadata:
   name: {{ template "stock-api.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ template "stock-api.name" . }}
     helm.sh/chart: {{ template "stock-api.chart" . }}
+    app.kubernetes.io/name: {{ template "stock-api.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app: {{ template "stock-api.name" . }}
 spec:
   replicas: {{ .Values.stock_api.replicaCount }}
   selector:
@@ -17,6 +18,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ template "stock-api.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app: {{ template "stock-api.name" . }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
