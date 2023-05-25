@@ -6,7 +6,7 @@ metadata:
   labels:
     helm.sh/chart: {{ template "stock-api.chart" . }}
 spec:
-  schedule: "0 */12 * * *" # Run every 12 hours
+  schedule: "0 */24 * * *"
   jobTemplate:
     spec:
       template:

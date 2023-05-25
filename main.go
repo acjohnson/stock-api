@@ -118,7 +118,7 @@ func main() {
 				return
 			}
 
-			ttlDuration := 12 * time.Hour
+			ttlDuration := 24 * time.Hour
 			err = client.Expire(symbol, ttlDuration).Err()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
