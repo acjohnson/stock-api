@@ -14,3 +14,7 @@ For the stock ticker data, I asked it where it recomended I get this data for fr
 and somehow after I decided we'd use Yahoo Finance it came up with this RapidAPI
 endpoint that I had to create a free account with and it gave me a token after
 setting up the apidojo Yahoo Finance API with RapidAPI, again all for free...
+
+Changelog
+---------
+7-7-2023 Switched from rapidapi to chromedp and browser scraping
