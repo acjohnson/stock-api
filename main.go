@@ -45,22 +45,33 @@ func fetchStockValue(symbol string) (*StockQuote, error) {
 	ctx, cancel = chromedp.NewContext(ctx, chromedp.WithLogf(log.Printf))
 	defer cancel()
 
-	// Set up timeout
-	ctx, cancel = context.WithTimeout(ctx, 20*time.Second)
+	// Set up a cancelable context with a timeout
+	timeout := 30 * time.Second
+	ctx, cancel = context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Run the browser automation
+	// Run the browser automation within the context
 	var stockPriceHTML string
-	err := chromedp.Run(ctx,
+	tasks := chromedp.Tasks{
 		chromedp.Navigate("https://www.google.com/"),
 		chromedp.WaitVisible(`textarea[aria-label="Search"]`, chromedp.ByQuery),
 		chromedp.SetValue(`textarea[aria-label="Search"]`, searchTerm, chromedp.ByQuery),
 		chromedp.Submit(`form[action="/search"]`, chromedp.ByQuery),
 		chromedp.WaitVisible(`div[data-attrid="Price"]`, chromedp.ByQuery),
 		chromedp.OuterHTML(`div[data-attrid="Price"]`, &stockPriceHTML, chromedp.ByQuery),
-	)
+	}
+
+	// Execute the tasks
+	err := chromedp.Run(ctx, tasks)
 	if err != nil {
-		log.Fatal(err)
+		// Handle the error gracefully
+		if ctxErr := ctx.Err(); ctxErr == context.DeadlineExceeded {
+			// Timeout occurred, handle it as needed
+			log.Println("Timeout occurred during browser automation:", err)
+		} else {
+			// Other error occurred, handle it as needed
+			log.Fatal(err)
+		}
 	}
 
 	// Extract stock price using regex
