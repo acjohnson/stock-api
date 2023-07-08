@@ -3,6 +3,7 @@ module stock-api
 go 1.18
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/chromedp/chromedp v0.9.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/prometheus/client_golang v1.15.1

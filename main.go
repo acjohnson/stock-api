@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/chromedp/chromedp"
 	"github.com/go-redis/redis"
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,19 +51,28 @@ func fetchStockValue(symbol string) (*StockQuote, error) {
 	ctx, cancel = context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// Run the browser automation within the context
-	var stockPriceHTML string
-	tasks := chromedp.Tasks{
-		chromedp.Navigate("https://www.google.com/"),
-		chromedp.WaitVisible(`textarea[aria-label="Search"]`, chromedp.ByQuery),
-		chromedp.SetValue(`textarea[aria-label="Search"]`, searchTerm, chromedp.ByQuery),
-		chromedp.Submit(`form[action="/search"]`, chromedp.ByQuery),
-		chromedp.WaitVisible(`div[data-attrid="Price"]`, chromedp.ByQuery),
-		chromedp.OuterHTML(`div[data-attrid="Price"]`, &stockPriceHTML, chromedp.ByQuery),
-	}
+	// Retry options
+	maxRetries := 3
+	retryDelay := 1 * time.Second
 
-	// Execute the tasks
-	err := chromedp.Run(ctx, tasks)
+	// Run the browser automation within the context with retries
+	var stockPriceHTML string
+	err := retry.Do(func() error {
+		// Execute the tasks
+		tasks := chromedp.Tasks{
+			chromedp.Navigate("https://www.google.com/"),
+			chromedp.WaitVisible(`textarea[aria-label="Search"]`, chromedp.ByQuery),
+			chromedp.SetValue(`textarea[aria-label="Search"]`, searchTerm, chromedp.ByQuery),
+			chromedp.Submit(`form[action="/search"]`, chromedp.ByQuery),
+			chromedp.WaitVisible(`div[data-attrid="Price"]`, chromedp.ByQuery),
+			chromedp.OuterHTML(`div[data-attrid="Price"]`, &stockPriceHTML, chromedp.ByQuery),
+		}
+		return chromedp.Run(ctx, tasks)
+	},
+		retry.Attempts(uint(maxRetries)),
+		retry.Delay(retryDelay),
+	)
+
 	if err != nil {
 		// Handle the error gracefully
 		if ctxErr := ctx.Err(); ctxErr == context.DeadlineExceeded {
